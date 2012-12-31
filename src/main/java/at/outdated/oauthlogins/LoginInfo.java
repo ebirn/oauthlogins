@@ -1,6 +1,7 @@
 package at.outdated.oauthlogins;
 
 import at.outdated.oauthlogins.providers.AuthApiProvider;
+import org.scribe.model.Token;
 
 import javax.enterprise.context.SessionScoped;
 import javax.enterprise.inject.Instance;
@@ -33,6 +34,7 @@ public class LoginInfo implements Serializable {
     private String email;
 
     private String accessToken;
+    private String accessSecret;
 
     private String remoteApi;
 
@@ -105,5 +107,18 @@ public class LoginInfo implements Serializable {
 
     public void setRemoteApi(String remoteApi) {
         this.remoteApi = remoteApi;
+    }
+
+    public String getAccessSecret() {
+        return accessSecret;
+    }
+
+    public void setAccessSecret(String accessSecret) {
+        this.accessSecret = accessSecret;
+    }
+
+    public void setAccessToken(Token token) {
+        this.accessSecret = token.getSecret();
+        this.accessToken = token.getToken();
     }
 }

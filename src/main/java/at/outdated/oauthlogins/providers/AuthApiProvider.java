@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -30,16 +32,16 @@ public abstract class AuthApiProvider implements Serializable {
     protected Token accessToken;
     protected Token requestToken;
 
-    Properties prop = new Properties();
+    protected Properties prop = new Properties();
+
+    protected Logger log;
 
     @PostConstruct
     public void init() throws IOException {
-
+        log = Logger.getLogger(getName());
+        log.setLevel(Level.INFO);
 
         prop.load(getClass().getResourceAsStream("oauth.properties"));
-
-
-
         service = buildService().build();
     }
 
@@ -49,13 +51,11 @@ public abstract class AuthApiProvider implements Serializable {
 
     public abstract String extractVerifier(HttpServletRequest request);
 
-    protected  String extractVerifier(String verifierStr) {
-        System.out.println("GOT verifier: " + verifierStr);
-
+    protected String extractVerifier(String verifierStr) {
+        log.log(Level.FINE, "received verifier: {0}", verifierStr);
         this.verifier = new Verifier(verifierStr);
-
-    return verifierStr;
-}
+        return verifierStr;
+    }
 
     public abstract void updateLoginInfo(LoginInfo info);
 
@@ -64,17 +64,16 @@ public abstract class AuthApiProvider implements Serializable {
     }
 
     protected String requestAuthUrl(Token requestToken) {
-
         String authUrl = service.getAuthorizationUrl(requestToken);
-        System.out.println("authUrl: " + authUrl);
-
+        log.log(Level.FINE, "authUrl: {0}", authUrl);
         return authUrl;
     }
 
     public String requestAccessToken() {
 
-        if(accessToken == null) {
+        if (accessToken == null) {
             accessToken = service.getAccessToken(requestToken, verifier);
+            log.log(Level.FINE, "new accessToken: {0}", accessToken);
         }
         return accessToken.getToken();
     }
@@ -82,22 +81,26 @@ public abstract class AuthApiProvider implements Serializable {
     public ServiceBuilder buildService() {
         ServiceBuilder builder;
         builder = new ServiceBuilder().provider(getApiClass());
-        builder.apiKey(prop.getProperty(getName().toLowerCase()+".api.key"));
-        builder.apiSecret(prop.getProperty(getName().toLowerCase()+".api.secret"));
+
+        // retrieve api secret/keys from config file
+        builder.apiKey(prop.getProperty(getName().toLowerCase() + ".api.key"));
+        builder.apiSecret(prop.getProperty(getName().toLowerCase() + ".api.secret"));
 
 
-        // send redirects to our own login servlet
-        //String contextPath = facesContext.getExternalContext().getRequestContextPath();
-        //String callbackUrl = contextPath + "/login";
-        //builder.callback(callbackUrl);
+        // set callback from textfile: this url should be generated automatically
         builder.callback(prop.getProperty("local.callback"));
-        builder.debug();
+
+        String scope = prop.getProperty(getName().toLowerCase() + ".api.scope", null);
+
+        if(scope != null) {
+            builder.scope(scope);
+        }
+
+        if(log.getLevel().intValue() < Level.INFO.intValue()) {
+            builder.debug();
+        }
 
         return builder;
-    }
-
-    public OAuthService getService() {
-        return service;
     }
 
     @Override
@@ -107,7 +110,7 @@ public abstract class AuthApiProvider implements Serializable {
 
     public Response getUserData() {
 
-        OAuthRequest request = new OAuthRequest(Verb.GET, prop.getProperty(getName().toLowerCase()+".api.userinfo"));
+        OAuthRequest request = new OAuthRequest(Verb.GET, prop.getProperty(getName().toLowerCase() + ".api.userinfo"));
 
         service.signRequest(getAccessToken(), request);
         Response response = request.send();
@@ -116,7 +119,7 @@ public abstract class AuthApiProvider implements Serializable {
     }
 
     protected Token getAccessToken() {
-        if(accessToken == null) {
+        if (accessToken == null) {
             requestAccessToken();
         }
         return accessToken;

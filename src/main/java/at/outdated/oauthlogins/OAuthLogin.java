@@ -19,18 +19,13 @@ import javax.servlet.http.HttpServletRequest;
 @Stateless
 public class OAuthLogin {
 
-
     @Inject
     LoginInfo login;
-
-    @Inject
-    BeanManager manager;
 
     @PostConstruct
     public void init() {
 
     }
-
 
     public String requestAuthUrl() {
          return login.getApiProvider().requestAuthUrl();

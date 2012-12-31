@@ -29,67 +29,73 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        System.out.println("init LoginServlet");
-        super.init();    //To change body of overridden methods use File | Settings | File Templates.
+
+        super.init();
     }
 
     @Override
     protected void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
-        System.out.println("LoginServlet: doPOST");
 
+
+        // this decides whether full login is done or accesstoken can be reused
         if(info.getAccessToken() == null) {
             String authUrl = login.requestAuthUrl();
             httpServletResponse.sendRedirect(authUrl);
         }
+        // reuse access token, verify login
         else {
-            login.updateUserInfo();
-            httpServletResponse.sendRedirect(getServletContext().getContextPath() + "/hello.xhtml");
+            boolean loginOk = login.verifyLogin();
+            if(loginOk) {
+                handleLoginOK(httpServletRequest,httpServletResponse);
+            }
+            else {
+                handleLoginFAIL(httpServletRequest,httpServletResponse);
+            }
         }
-        //super.doPost(httpServletRequest, httpServletResponse);    //To change body of overridden methods use File | Settings | File Templates.
+
     }
 
+    // the GET handles the oauth API callbacks with verifier
     @Override
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
 
+        boolean loginOk = false;
 
         try {
-
             login.processVerifier(httpServletRequest);
-
-            boolean loginOk = login.verifyLogin();
-
+            loginOk = login.verifyLogin();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        finally {
             if(loginOk) {
-                //httpServletRequest.login("myUserName", "myPassword");
-                login.updateUserInfo();
-                // all is well
-                httpServletResponse.sendRedirect(getServletContext().getContextPath() + "/hello.xhtml");
-
-
+                handleLoginOK(httpServletRequest, httpServletResponse);
             }
             else {
-                httpServletRequest.logout();
-                httpServletResponse.sendError(403, "login failed");
+                handleLoginFAIL(httpServletRequest,httpServletResponse);
             }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
-    /*
-    @Override
-    protected void service(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
-        System.out.println("LoginServlet: service");
-        System.out.println("UserInfo: " + myUserInfo);
-        System.out.println("OAuthLogin: " + login);
-        dummy.huh();
 
+    // Point for override/change: successful login,auth
+    protected void handleLoginOK(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
 
+        // ensure existing http session
+        httpServletRequest.getSession(true);
 
+        login.updateUserInfo();
 
-        super.service(httpServletRequest, httpServletResponse);    //To change body of overridden methods use File | Settings | File Templates.
+        httpServletResponse.sendRedirect(getServletContext().getContextPath() + "/hello.xhtml");
     }
-    */
+
+
+    // Point for override/change: login error handling
+    protected void handleLoginFAIL(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
+        httpServletRequest.logout();
+        httpServletResponse.sendError(403, "login failed");
+    }
 }
 
 
