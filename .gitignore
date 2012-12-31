@@ -1,3 +1,5 @@
+oauthlogins.iml
+.idea
 target/
 *.class
 
