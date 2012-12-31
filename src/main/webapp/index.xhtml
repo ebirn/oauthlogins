@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Created by IntelliJ IDEA.
+  User: ebirn
+  Date: 30.12.12
+  Time: 12:51
+-->
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core">
+
+<h:head>
+    <title>OAuth Login Demo</title>
+</h:head>
+
+<h:body>
+
+    <h1>OAuth Login demo</h1>
+    <h:form >
+        <h:selectOneListbox value="#{loginInfo.remoteApi}" required="true">
+            <f:selectItems value="#{loginBean.apiProviders}" var="provider" itemLabel="#{provider.name}" itemValue="#{provider.name}"/>
+        </h:selectOneListbox>
+        <h:commandButton action="#{loginBean.forward}" value="login" />
+    </h:form>
+    Login with anything you like!
+
+
+</h:body>
+
+</html>
